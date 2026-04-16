@@ -17,6 +17,8 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from dataclasses import field
+
 from attrdict import AttrDict
 from einops import rearrange
 import torch
@@ -51,7 +53,7 @@ def model_name_to_cls(cls_name):
 class VisionUnderstandEncoderConfig(PretrainedConfig):
     model_type = "vision_und_enc"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -66,7 +68,7 @@ class VisionUnderstandEncoderConfig(PretrainedConfig):
 class VisionGenerationEncoderConfig(PretrainedConfig):
     model_type = "vision_gen_enc"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -81,7 +83,7 @@ class VisionGenerationEncoderConfig(PretrainedConfig):
 class VisionGenerationDecoderConfig(PretrainedConfig):
     model_type = "vision_gen_dec"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -167,6 +169,8 @@ class MultiModalityCausalLM(MultiModalityPreTrainedModel):
             2048, eps=language_config.rms_norm_eps
         )
         self.vision_gen_dec_aligner = nn.Linear(2048, 768, bias=True)
+
+        self.post_init()
 
     def prepare_inputs_embeds(
         self,

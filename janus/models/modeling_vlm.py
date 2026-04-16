@@ -17,6 +17,8 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from dataclasses import field
+
 import torch
 from attrdict import AttrDict
 from einops import rearrange
@@ -73,7 +75,7 @@ def model_name_to_cls(cls_name):
 class VisionConfig(PretrainedConfig):
     model_type = "vision"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -88,7 +90,7 @@ class VisionConfig(PretrainedConfig):
 class AlignerConfig(PretrainedConfig):
     model_type = "aligner"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -103,7 +105,7 @@ class AlignerConfig(PretrainedConfig):
 class GenVisionConfig(PretrainedConfig):
     model_type = "gen_vision"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -118,7 +120,7 @@ class GenVisionConfig(PretrainedConfig):
 class GenAlignerConfig(PretrainedConfig):
     model_type = "gen_aligner"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -133,7 +135,7 @@ class GenAlignerConfig(PretrainedConfig):
 class GenHeadConfig(PretrainedConfig):
     model_type = "gen_head"
     cls: str = ""
-    params: AttrDict = {}
+    params: AttrDict = field(default_factory=AttrDict)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -217,6 +219,8 @@ class MultiModalityCausalLM(MultiModalityPreTrainedModel):
 
         language_config = config.language_config
         self.language_model = LlamaForCausalLM(language_config)
+
+        self.post_init()
 
     def prepare_inputs_embeds(
         self,
