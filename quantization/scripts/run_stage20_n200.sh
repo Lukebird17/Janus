@@ -4,8 +4,11 @@ set -euo pipefail
 # ================================================================
 # Stage 20 (Janus-Pro-7B): Per-Layer CKA Search + Evaluation
 #
-# 使用 N=200 校准数据，先运行 stage0 收集激活（如果没有），
-# 然后运行 stage20 per-layer CKA 搜索 + stage3 评测。
+# 完整 pipeline：
+# 1. 构建 Janus 自己的校准数据集（如果不存在）
+# 2. Stage 0 收集激活统计（如果不存在）
+# 3. Stage 20 per-layer CKA 搜索
+# 4. Stage 3 评测
 # ================================================================
 
 PYTHON="${PYTHON:-/home/honglianglu/data/.conda/envs/janus/bin/python}"
@@ -23,11 +26,16 @@ RUN_DATE=$(date +%Y%m%d)
 
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 
-# 校准数据（复用 Bagel 的）
-CALIB_JSON="/data/user/honglianglu/Bagel/quantization/quantization_outputs/csc_sweep/N${N}_seed${SEED}/calibration_subset_N${N}.json"
+# Flickr8K 数据
+FLICKR8K_ROOT="${FLICKR8K_ROOT:-/data/user/honglianglu/Bagel/data/flickr8k}"
+
+# Janus 校准数据（由 run_stage0.sh 构建）
+CALIB_ROOT="${JANUS_QUANT_ROOT}/quantization_outputs/calibration_data"
+FULL_CALIB="${CALIB_ROOT}/calibration_dataset_latest.json"
 
 # Stage 0 输出
 STATS_DIR="${JANUS_QUANT_ROOT}/quantization_outputs/stage0_N${N}_seed${SEED}"
+CALIB_JSON="${STATS_DIR}/calibration_subset_N${N}.json"
 HESSIAN_IDX="${STATS_DIR}/gptq_hessian_index_latest.json"
 SMOOTH_STATS="${STATS_DIR}/smoothquant_stats_latest.pt"
 AWQ_STATS="${STATS_DIR}/awq_stats_latest.pt"
@@ -42,8 +50,8 @@ echo "================================================================"
 echo " Stage 20 (Janus-Pro-7B): Per-Layer CKA Search"
 echo "================================================================"
 echo "  Model       : ${MODEL_PATH}"
-echo "  Calibration : ${CALIB_JSON}"
 echo "  GPU         : ${GPU_IDS}"
+echo "  N           : ${N}"
 echo "  CKA samples : ${CKA_NUM_SAMPLES}"
 echo "  Benchmarks  : ${BENCHMARKS}"
 echo "  Output      : ${OUTPUT_ROOT}"
@@ -55,7 +63,9 @@ echo "================================================================"
 if [ ! -f "${HESSIAN_IDX}" ]; then
     echo ""
     echo "[Step 0] Activation stats not found. Running stage0..."
-    bash "${JANUS_QUANT_ROOT}/scripts/run_stage0.sh"
+    N="${N}" SEED="${SEED}" GPU_IDS="${GPU_IDS}" \
+    FLICKR8K_ROOT="${FLICKR8K_ROOT}" \
+        bash "${JANUS_QUANT_ROOT}/scripts/run_stage0.sh"
 fi
 
 for f in "${CALIB_JSON}" "${HESSIAN_IDX}" "${SMOOTH_STATS}" "${AWQ_STATS}"; do
